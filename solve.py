@@ -2,6 +2,7 @@
 
 
 import random
+import copy
 import sys
 sys.setrecursionlimit(10000)
 
@@ -14,7 +15,6 @@ def maxTheMax(dieRoll, dominos):
         return False
     elif dieRoll == 0:
         return True
-
     for valueToAchieve in range(min(dieRoll, 10), 0, -1):
         idx = valueToAchieve - 1
         if dominos[idx]:
@@ -27,6 +27,54 @@ def maxTheMax(dieRoll, dominos):
     return False
 
 
+def minCost(costs):
+
+    #subset is a decimal number encoding binary string telling us which dominos to pick
+    #0 <= n < len(dominos)
+    #the rightmost portion of the string corresponds to lower value dominos
+    def extractBit(subset, n):
+        return (subset >> n) % 2
+
+    def iterateSubsetSums(L, k):
+        for subset in range(2**(len(L))):
+            v = 0
+            total = 0
+            for dominoValue in range(1, len(L) + 1):
+                if L[dominoValue - 1] and extractBit(subset, dominoValue - 1):
+                    total += dominoValue
+            if total == k:
+                yield subset
+
+    def subsetCost(subset, dominos):
+        cost = 0
+        for i in range(len(dominos)):
+            cost += costs[i]*(extractBit(subset, i))
+        return cost
+
+    def strategy(dieRoll, dominos):
+
+        bestCost = None
+        bestSubset = None
+        for subset in iterateSubsetSums(dominos, dieRoll):
+            thisCost = subsetCost(subset, dominos)
+            if bestCost == None or thisCost < bestCost:
+                bestSubset = subset
+                bestCost = thisCost
+
+
+        if bestCost != None:
+            for i in range(len(dominos)):
+                if extractBit(bestSubset, i):
+                    dominos[i] = False
+            return True
+
+
+        return False
+
+
+    return strategy
+
+basicCost = minCost([100, 8, 6, 4, 2, 0, -2, -4, -60, -800])
 
 def sumDominos(dominos):
     score = 0
@@ -62,9 +110,7 @@ def findStats(strategy):
 
     return (runningAverage/NUM_TRIALS, probabilityofShutting)
 
-
-print(findStats(maxTheMax))
-
+print(findStats(basicCost))
 
 
 
